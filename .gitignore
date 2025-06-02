@@ -1,0 +1,50 @@
+# === .NET / ASP.NET Core typical ignores ===
+
+# Build directories
+bin/
+obj/
+
+# Visual Studio artifacts
+.vs/
+*.user
+*.suo
+*.userprefs
+*.dbmdl
+
+# Rider / JetBrains
+.idea/
+
+# NuGet packages
+*.nupkg
+# Packages directory (if you ever restore packages to a folder)
+packages/
+
+# Logs
+*.log
+
+# DotNet cache
+.vsproject
+
+# =============================
+# SQLite / local database file
+# =============================
+MyAuthApp.db
+*.db
+
+# =============================
+# VS Code settings (optional)
+# =============================
+.vscode/
+
+# =============================
+# Mac/Linux FS artifacts
+# =============================
+.DS_Store
+*.DS_Store
+
+# =============================
+# Other temp or local files
+# =============================
+*.user
+*.suo
+*.dbmdl
