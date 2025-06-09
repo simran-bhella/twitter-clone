@@ -124,5 +124,70 @@ namespace MyAuthApp.Controllers
                 expiresIn = tokenDescriptor.Expires
             });
         }
+
+                [Authorize]
+        [HttpPut("edit")]
+        public async Task<IActionResult> Edit([FromBody] UserUpdateDto dto)
+        {
+            // 1. Get current user ID from JWT "sub" claim
+            var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!Guid.TryParse(sub, out var userId))
+                return Unauthorized();
+
+            var user = await _dbContext.Users.FindAsync(userId);
+            if (user == null)
+                return NotFound(new { message = "User not found." });
+
+            // 2. Update username/email if supplied (and unique)
+            if (!string.IsNullOrWhiteSpace(dto.Username) && dto.Username != user.Username)
+            {
+                if (await _dbContext.Users.AnyAsync(u => u.Username == dto.Username))
+                    return Conflict(new { message = "Username already taken." });
+                user.Username = dto.Username;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.Email) && dto.Email != user.Email)
+            {
+                if (await _dbContext.Users.AnyAsync(u => u.Email == dto.Email))
+                    return Conflict(new { message = "Email already registered." });
+                user.Email = dto.Email;
+            }
+
+            // 3. Update password if supplied
+            if (!string.IsNullOrWhiteSpace(dto.Password))
+            {
+                user.PasswordHash = _passwordHasher.HashPassword(user, dto.Password);
+            }
+
+            // 4. Persist changes
+            _dbContext.Users.Update(user);
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Account updated successfully." });
+        }
+
+        // ===============
+        // DELETE ACCOUNT
+        // ===============
+        [Authorize]
+        [HttpDelete("delete")]
+        public async Task<IActionResult> Delete()
+        {
+            var sub = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+            if (!Guid.TryParse(sub, out var userId))
+                return Unauthorized();
+
+            var user = await _dbContext.Users.FindAsync(userId);
+            if (user == null)
+                return NotFound(new { message = "User not found." });
+
+            _dbContext.Users.Remove(user);
+            await _dbContext.SaveChangesAsync();
+
+            return Ok(new { message = "Account deleted successfully." });
+        }
+    }
+}
+
     }
 }
