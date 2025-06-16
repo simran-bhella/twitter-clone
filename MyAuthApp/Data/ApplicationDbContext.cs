@@ -6,6 +6,7 @@ namespace MyAuthApp.Data
     public class ApplicationDbContext : DbContext
     {
         public DbSet<User> Users { get; set; }  // Represents the Users table
+        public DbSet<Tweet> Tweets { get; set; }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)

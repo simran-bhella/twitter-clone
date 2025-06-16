@@ -9,8 +9,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using MyAuthApp.Data;
-using MyAuthApp.Dtos;       // ← Make sure this line is present
+using MyAuthApp.Dtos;
 using MyAuthApp.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MyAuthApp.Controllers
 {
@@ -186,8 +187,5 @@ namespace MyAuthApp.Controllers
 
             return Ok(new { message = "Account deleted successfully." });
         }
-    }
-}
-
     }
 }

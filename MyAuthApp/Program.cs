@@ -6,47 +6,51 @@ using MyAuthApp.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configure EF Core to use SQLite
+// 1. EF Core / SQLite, password hasher, JWT auth (already in place)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// 2. Register Identity’s password hasher for User
 builder.Services.AddScoped<Microsoft.AspNetCore.Identity.IPasswordHasher<MyAuthApp.Models.User>,
     Microsoft.AspNetCore.Identity.PasswordHasher<MyAuthApp.Models.User>>();
-
-// 3. Configure JWT authentication
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var keyString = jwtSettings["Key"];
-var keyBytes = Encoding.UTF8.GetBytes(keyString);
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+var jwt = builder.Configuration.GetSection("JwtSettings");
+var keyBytes = Encoding.UTF8.GetBytes(jwt["Key"]);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
-        ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
-        ClockSkew = TimeSpan.Zero
-    };
-});
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwt["Issuer"],
+            ValidAudience = jwt["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
+// 2. Add controllers and Swagger services
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();        // for minimal APIs; still needed
+builder.Services.AddSwaggerGen();                  // generate OpenAPI spec + UI
 
 var app = builder.Build();
 
-// 4. Auto-migrate SQLite on startup
+// 3. Auto-migrate database
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.Migrate();
+}
+
+// 4. Enable Swagger middleware in Development only (optional)
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.RoutePrefix = "swagger";                 // serve at /swagger
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "MyAuthApp v1");
+    });
 }
 
 app.UseRouting();
